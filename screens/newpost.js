@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import { View, Text, ActivityIndicator, FlatList, Button, Alert, TextInput, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import AsyncStorageLib from '@react-native-async-storage/async-storage';
+import { showMessage } from 'react-native-flash-message';
 
 class NewPost extends Component{
   constructor(props){
@@ -9,7 +9,7 @@ class NewPost extends Component{
 
     this.state = {
       text : "",
-      friendID: this.props.route.params
+      errorMessage: ''
     }
   }
 
@@ -20,41 +20,43 @@ class NewPost extends Component{
 
     const token = await AsyncStorage.getItem('@session_token');
     const userID = await AsyncStorage.getItem('@userID');
-    if(this.state.friendID == null){
-      return fetch("http://localhost:3333/api/1.0.0/user/" + this.state.friendID + "/post" ,  {
-        method: 'post',
-        headers: {
-          "X-Authorization" : token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(to_send)
-      })
-      .then((response) => {
-        if(response.status == 200){
-          Alert.alert("Post added");
-        }
-      })
-      .catch((error) => {
-        console.log(error);
+    if(this.state.text.length === 0){
+      showMessage({
+        message: 'Post cannot be empty',
+        type: 'warning'
       })
     }else{
-      return fetch("http://localhost:3333/api/1.0.0/user/" + userID + "/post" ,  {
-        method: 'post',
-        headers: {
-          "X-Authorization" : token,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(to_send)
-      })
-      .then((response) => {
-        if(response.status == 200){
-          Alert.alert("Post added");
-        }
-      })
-      .catch((error) => {
-        console.log(error);
-      })
-    }
+        return fetch("http://localhost:3333/api/1.0.0/user/" + userID + "/post" ,  {
+          method: 'post',
+          headers: {
+            "X-Authorization" : token,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(to_send)
+        })
+        .then((response) => {
+          if(response.status === 201){
+            this.props.navigation.navigate('Home');
+          }else if(response.status === 401){
+            console.log('You are not authorized, please login');
+            showMessage({
+              message: 'You are not authorized, please login',
+              type: 'warning',
+              icon: 'warning'
+            })
+            this.props.navigation.navigate('Login');
+          }else{
+            showMessage({
+              message: 'Something went wrong!',
+              type: "warning",
+              icon: 'warning'
+            });
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+        })
+      }
   }
 
   render(){
@@ -65,7 +67,7 @@ class NewPost extends Component{
                 onChangeText={(text) => this.setState({text})}
                 value={this.state.text}
                 multiline = 'true'
-                style={{width: '90%', backgroundColor:"#f8f9fa", borderColor: '#0096c7', borderWidth: 2, height: 100, margin: 20, padding: 20}}
+                style={styles.postInput}
               />
               <Pressable style={styles.button} onPress={() => this.newPost()}>
                 <Text style={styles.text}>Post</Text>
@@ -95,6 +97,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.25,
     color: 'white',
   },
+  postInput: {
+    width: '90%',
+    backgroundColor:"#f8f9fa",
+    borderColor: '#0096c7',
+    borderWidth: 2,
+    height: 100,
+    margin: 20,
+    padding: 20
+  }
 });
 
 export default NewPost;

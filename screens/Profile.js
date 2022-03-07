@@ -1,13 +1,13 @@
 import React, { Component } from "react";
-import { View, Button, Text, StyleSheet, TextInput, Pressable,ScrollView,ActivityIndicator, TouchableOpacity, TouchableHighlight, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, TouchableHighlight, Image } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FlatList } from "react-native-gesture-handler";
 import Feather from 'react-native-vector-icons/Feather';
-import Moment from 'moment';
+import moment from 'moment';
+import { showMessage } from "react-native-flash-message";
 
 class Profile extends Component {
 
-  
   constructor(props){
     super(props);
 
@@ -20,9 +20,14 @@ class Profile extends Component {
   }
 
   componentDidMount(){
-    this.getPosts();
-    this.getData();
-    this.getProfileImage();
+    this.unsubsribe = this.props.navigation.addListener('focus', () => {
+      this.getPosts();
+      this.getData();
+      this.getProfileImage();
+    })
+  }
+  componentWillUnmount() {
+    this.unsubscribe();
   }
 
   getData = async () => {
@@ -34,9 +39,24 @@ class Profile extends Component {
         "X-Authorization" : token
       }
     })
-    .then((response) => response.json())
+    .then((response) => {
+      if(response.status === 200){
+        console.log("Welcome to your profile page");
+        return response.json()
+      }else if(response.status === 401){
+        showMessage({
+          message: "You are not authorized, please login",
+          type: 'warning',
+        })
+        this.props.navigation.navigate('Login');
+      }else {
+        showMessage({
+          message: "Something went wrong!",
+          type: 'warning',
+        })
+      }
+    })
     .then((responseJson) => {
-      console.log(responseJson);
       this.setState({
         isLoading: false,
         listData: responseJson
@@ -80,9 +100,23 @@ class Profile extends Component {
         "X-Authorization" : token
       }
     })
-    .then((response) => response.json())
+    .then((response) => {
+      if(response.status === 200){
+        return response.json()
+      }else if(response.status === 401){
+        showMessage({
+          message: "You are not authorized, please login",
+          type: 'warning',
+        })
+        this.props.navigation.navigate('Login');
+      }else {
+        showMessage({
+          message: "Something went wrong!",
+          type: 'warning',
+        })
+      }
+    })
     .then((responseJson) => {
-      console.log(responseJson);
       this.setState({
         isLoading: false,
         userPosts: responseJson
@@ -91,12 +125,6 @@ class Profile extends Component {
     .catch((error) => {
       console.log(error);
     })
-  }
-
-  getPostDate = (timestamp) =>{
-    var postDate = new Date(timestamp).toLocaleDateString();
-
-    return postDate;
   }
 
   render(){
@@ -117,25 +145,14 @@ class Profile extends Component {
             source={{
               uri: this.state.photo,
             }}
-            style={{
-              width: 80,
-              height: 80,
-              borderWidth: 3,
-              borderRadius: 100,
-              borderColor: '#0996c7',
-              alignContent: 'center',
-              justifyContent: 'center',
-              alignSelf: 'center',
-              marginTop: 10 
-            }}
+            style={styles.imageStyle}
           />
           <Text style={styles.logo}>{this.state.listData.first_name} {this.state.listData.last_name}</Text>
-          <Text style={styles.logo}>{this.state.listData.friend_count}    {this.state.userPosts.length}</Text>
-          <Text style={styles.logo}>Friends  Posts</Text>
-
+          <Text style={styles.logo}>    {this.state.listData.friend_count}             {this.state.userPosts.length}</Text>
+          <Text style={styles.logo}>Friends    Posts</Text>
           <View style={{flex:1, flexDirection: 'row', justifyContent: 'space-around', borderBottomWidth: 3, borderBottomColor: '#0096c7'}}>
             <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Update Profile")}>
-                <Text style={styles.loginText}>Update Profile</Text>
+                <Text style={styles.loginText}>Edit Profile</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Camera")}>
@@ -143,31 +160,31 @@ class Profile extends Component {
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={{flex: 4}}>
+          <ScrollView style={{flex: 5}}>
                 <FlatList
                   data={this.state.userPosts}
                   renderItem={({item}) => (
-                      <View style={{borderWidth: 2, padding: 5, margin: 10, borderColor: '#0096c7', backgroundColor: 'white', borderRadius: 10}}>
-                        <TouchableHighlight underlayColor={'transparent'} onPress={() => this.props.navigation.navigate("Expand Post",item.post_id)}>
-                          <View style={{alignItems: 'flex-end' ,paddingLeft: 5}}>
-                            <Feather name="arrow-right" size={15} color="#0096c7"/>
-                          </View>
-                        </TouchableHighlight>
-                        <Text style={{fontWeight: "bold", fontSize: 15, paddingBottom: 10}}>{item.author.first_name} {item.author.last_name}</Text>
-                        <Text style={{fontSize: 13, padding: 10, paddingTop: 0}}>{item.text}</Text>
-                        <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-start', margin: 10}}>
-                            <Feather name="heart" size = {15} color="red"/><Text style={{paddingLeft: 5}}>{item.numLikes}</Text>
-                            <TouchableHighlight underlayColor={'transparent'} style={{marginLeft: 10}} onPress={() => this.likePost()}>
-                              <View>
-                                <Feather name="thumbs-up" size={15} color="#0096c7"/>
-                              </View>
-                            </TouchableHighlight>
+                      <View style={styles.view1}>
+                        <View style={styles.view2}>
+                            <Text style={styles.nameText}>{item.author.first_name} {item.author.last_name}</Text>
+                            <View style={{flex: 1, alignItems: 'flex-end'}}>
+                              <TouchableHighlight underlayColor={'transparent'} onPress={() => this.props.navigation.navigate("Expand Post",item.post_id)}>
+                                <View style={{alignItems: 'flex-end' ,paddingLeft: 5}}>
+                                  <Feather name="arrow-right" size={15} color="#0096c7"/>
+                                </View>
+                              </TouchableHighlight>
+                            </View>
                         </View>
-                        <View style={{alignItems: 'flex-end'}}>
-                          <Text>{this.getPostDate(item.timestamp)}</Text>
+                        <Text style={styles.postText}>{item.text}</Text>
+                        <View style={styles.view3}>
+                            <Feather name="heart" size = {15} color="red"/><Text style={{paddingLeft: 5}}>{item.numLikes}</Text>
+                            <View style={{flex: 1, alignItems: 'flex-end'}}>
+                              <Text>{moment(item.timestamp).fromNow()}</Text>
+                            </View>
                         </View>
                       </View>
                   )}
+                  keyExtractor={(item, index) => index.toString()}
                 />
           </ScrollView>
 
@@ -192,8 +209,8 @@ const styles = StyleSheet.create({
     fontSize:15,
     textAlign: 'center',
     color:"black",
-    marginTop: 10,
-    marginBottom:10,
+    marginTop: 5,
+    marginBottom:5,
     fontStyle:'italic'
   },
   inputView:{
@@ -225,6 +242,48 @@ const styles = StyleSheet.create({
     marginBottom:10
   },
   loginText:{
-    color:"white"
+    color:"white",
+    fontWeight: 'bold'
+  },
+  imageStyle: {
+    width: 80,
+    height: 80,
+    borderWidth: 3,
+    borderRadius: 100,
+    borderColor: '#0996c7',
+    alignContent: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    marginTop: 10 
+  },
+  view1: {
+    borderWidth: 2,
+    padding: 5,
+    margin: 10,
+    borderColor: '#0096c7',
+    backgroundColor: 'white',
+    borderRadius: 10
+  },
+  view2: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    margin: 5
+  },
+  view3: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    margin: 5
+  },
+  nameText: {
+    fontWeight: "bold",
+    fontSize: 15,
+    paddingBottom: 10
+  },
+  postText: {
+    fontSize: 13,
+    padding: 10,
+    paddingTop: 0
   }
 });
