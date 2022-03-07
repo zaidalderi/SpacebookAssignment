@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Alert, Button, ScrollView, StyleSheet, TextInput, TouchableOpacity,View, Text} from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View, Text} from 'react-native';
+import { showMessage } from 'react-native-flash-message';
 
 class SignupScreen extends Component{
     constructor(props){
@@ -15,35 +16,72 @@ class SignupScreen extends Component{
 
     signup = () => {
         //Validation here...
+        let reg = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w\w+)+$/;
         if(this.state.password.length < 8){
-            alert('Password must be minimum 8 character');
+            showMessage({
+                message: "Password must be minimum 8 character",
+                type: 'warning',
+                icon: 'warning'
+              })
+        }else if(this.state.first_name.length === 0){
+            showMessage({
+                message: "First name cannot be empty",
+                type: 'warning',
+                icon: 'warning'
+              })
+        }else if(this.state.last_name.length === 0 ){
+            showMessage({
+                message: "Last name cannot be empty",
+                type: 'warning',
+                icon: 'warning'
+              })
+        }else if(reg.test(this.state.email) === false){
+            showMessage({
+                message: "Email is not valid",
+                type: 'warning',
+                icon: 'warning'
+              })
+            return false;
         }
         else {
-            return fetch("http://localhost:3333/api/1.0.0/user", {
-            method: 'post',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(this.state)
-        })
-        .then((response) => {
-            if(response.status === 201){
-                return response.json()
-            }else if(response.status === 400){
-                throw 'Failed validation';
-            }else{
-                throw 'Something went wrong';
-            }
-        })
-        .then((responseJson) => {
-               console.log("User created with ID: ", responseJson);
-               this.props.navigation.navigate("Sign in");
-        })
-        .catch((error) => {
-            console.log(error);
-        })
+                return fetch("http://localhost:3333/api/1.0.0/user", {
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(this.state)
+            })
+            .then((response) => {
+                if(response.status === 201){
+                    console.log('User created successfully')
+                    showMessage({
+                        message: "User created successfully",
+                        type: 'success',
+                        icon: 'success'
+                      })
+                    return response.json()
+                }else if(response.status === 400){
+                    showMessage({
+                        message: "Please double check your entries",
+                        type: 'warning',
+                        icon: 'warning'
+                      })
+                }else{
+                    showMessage({
+                        message: "Something went wrong!",
+                        type: 'warning',
+                        icon: 'warning'
+                      })
+                }
+            })
+            .then((responseJson) => {
+                console.log("User created with ID: ", responseJson);
+                this.props.navigation.navigate("Sign in");
+            })
+            .catch((error) => {
+                console.log(error);
+            })
         }
-    
     }
 
     render(){
@@ -51,9 +89,6 @@ class SignupScreen extends Component{
             
             <View style={styles.container}>
                 <Text style={styles.logo}>Spacebook</Text>
-                <View>
-                {/* <Image style={{width: 200, height: 50}} source={require('../screens/SpacebookLogo.png')}/> */}
-                </View>
                 
                 <View style={styles.inputView} >
                     <TextInput  

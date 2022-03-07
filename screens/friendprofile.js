@@ -1,8 +1,10 @@
 import React, { Component } from "react";
-import { View, Button, Text, StyleSheet, TextInput, Pressable,ScrollView,ActivityIndicator, TouchableOpacity, TouchableHighlight } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity, TouchableHighlight, Image } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FlatList } from "react-native-gesture-handler";
 import Feather from 'react-native-vector-icons/Feather';
+import moment from 'moment';
+import { showMessage } from 'react-native-flash-message';
 
 class FriendProfile extends Component {
     constructor(props){
@@ -15,15 +17,22 @@ class FriendProfile extends Component {
             myfriendsList: [],
             friendsFriendList: [],
             userPosts: [],
-            loggedInUserFriends: []
+            loggedInUserFriends: [],
+            photo: null
         };
     }
 
-    componentDidMount(){
+    componentDidMount() {
+      this.unsubscribe = this.props.navigation.addListener('focus', () => {
         this.getPosts();
         this.getFriendsList();
-        this.getLoggedInUserFriends();
         this.getData();
+        this.getProfileImage();
+      });
+    }
+
+    componentWillUnmount() {
+      this.unsubscribe();
     }
 
     getData = async () => {
@@ -34,7 +43,22 @@ class FriendProfile extends Component {
             "X-Authorization" : token
           }
         })
-        .then((response) => response.json())
+        .then((response) => {
+          if(response.status === 200){
+            return response.json()
+          }else if(response.status === 401){
+            showMessage({
+              message: "You are not authorized, please login",
+              type: 'warning',
+            })
+            this.props.navigation.navigate('Login');
+          }else {
+            showMessage({
+              message: "Something went wrong",
+              type: 'warning',
+            })
+          }
+        })
         .then((responseJson) => {
           console.log(responseJson);
           this.setState({
@@ -68,6 +92,45 @@ class FriendProfile extends Component {
         })
       }
 
+      getProfileImage = async () => {
+        const token = await AsyncStorage.getItem('@session_token');
+        return fetch("http://localhost:3333/api/1.0.0/user/" + this.state.id + "/photo", {
+          method: 'GET',
+          headers: {
+            'X-Authorization': token
+          }
+        })
+        .then((res) => {
+          return res.blob();
+        })
+        .then((resBlob) => {
+          let data = URL.createObjectURL(resBlob);
+          this.setState({
+            photo: data,
+            isLoading: false
+          });
+        })
+        .then((response) => {
+          if(response.status === 200){
+            return response.json()
+          }else if(response.status === 401){
+            showMessage({
+              message: "You are not authorized, please login",
+              type: 'warning',
+            })
+            this.props.navigation.navigate('Login');
+          }else {
+            showMessage({
+              message: "Something went wrong",
+              type: 'warning',
+            })
+          }
+        })
+        .catch((err) => {
+          console.log("error", err)
+        });
+      }
+
       getPosts = async () => {
         const token = await AsyncStorage.getItem('@session_token');
         const userID = await AsyncStorage.getItem('@userID');
@@ -77,7 +140,29 @@ class FriendProfile extends Component {
             "X-Authorization" : token
           }
         })
-        .then((response) => response.json())
+        .then((response) => {
+          if(response.status === 200){
+            return response.json()
+          }else if(response.status === 401){
+            showMessage({
+              message: "You are not authorized, please login",
+              type: 'warning',
+              icon: 'warning'
+            })
+            this.props.navigation.navigate('Login');
+          }else if(response.status === 403){
+            showMessage({
+              message: "You must be friends with this user to view their posts",
+              type: 'warning',
+            })
+            return response.json();
+          }else{
+            showMessage({
+              message: "Something went wrong!",
+              type: 'warning',
+            }) 
+          }
+        })
         .then((responseJson) => {
           console.log("Posts",responseJson);
           this.setState({
@@ -90,31 +175,8 @@ class FriendProfile extends Component {
         })
       }
 
-      getLoggedInUserFriends = async () => {
-        const token = await AsyncStorage.getItem('@session_token');
-        const userID = await AsyncStorage.getItem('@userID');
-        return fetch("http://localhost:3333/api/1.0.0/user/" + userID + "/friends", {
-            method: 'get',
-            headers: {
-              "X-Authorization" : token
-            }
-          })
-          .then((response) => response.json())
-          .then((responseJson) => {
-            console.log("Logged in User Friends",responseJson);
-            this.setState({
-              isLoading: false,
-              loggedInUserFriends: responseJson
-            })
-          })
-          .catch((error) => {
-            console.log(error);
-          })
-      }
-
       likePost = async (postID) => {
         const token = await AsyncStorage.getItem('@session_token');
-        const userID = await AsyncStorage.getItem('@userID');
         return fetch("http://localhost:3333/api/1.0.0/user/" + this.state.id + "/post/" + postID + "/like", {
             method: 'POST',
             headers: {
@@ -123,19 +185,35 @@ class FriendProfile extends Component {
           })
           .then((response) => {
               if(response.status === 200){
-                  throw "Post Liked"
+              }else if(response.status === 401){
+                showMessage({
+                  message: "You are not authorized, please login",
+                  type: 'warning',
+                })
+                this.props.navigation.navigate('Login');
+              }else if(response.status === 403){
+                showMessage({
+                  message: "You cannot like your own posts",
+                  type: 'warning',
+                })
               }else if(response.status === 400){
-                  console.log("You have already liked this post")
+                showMessage({
+                  message: "You have already liked this post",
+                  type: 'warning',
+                  icon: 'warning'
+                })
+              }else{
+                showMessage({
+                  message: "Oops! Something went wrong!",
+                  type: 'warning',
+                  })
               }
           })
+          .catch((error) =>{
+            console.log(error)
+          })
         }
-
-      getPostDate = (timestamp) =>{
-        var postDate = new Date(timestamp).toLocaleDateString();
-    
-        return postDate;
-      }
-
+        
       render(){
         if(this.state.isLoading){
           return(
@@ -149,28 +227,38 @@ class FriendProfile extends Component {
         }else if(this.state.userPosts.length == 0){
           return(
             <View style={styles.container}>
+                  <Image
+                    source={{
+                      uri: this.state.photo,
+                    }}
+                    style={styles.imageStyle}
+                />
                 <View style={{flex: 1}}>
                     <Text style={styles.logo}>{this.state.profileData.first_name} {this.state.profileData.last_name}</Text>
-                    {/* <Text style={styles.logo}>{this.state.profileData.email}</Text> */}
                     <Text style={styles.logo}>{this.state.profileData.friend_count}    {this.state.userPosts.length}</Text>
                     <Text style={styles.logo}>Friends  Posts</Text>
                     <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend Wall Post",this.state.id)}>
                         <Text style={styles.loginText}>Post on Wall</Text>
                     </TouchableOpacity>
                 </View>
-                <View style={{flex: 1, }}>
-                    <Text style={{fontWeight: 'bold', fontSize: 20, textAlign: 'center', paddingBottom: 10, padding: 10}}>No posts yet</Text>
-                    <Text style={{fontWeight: 'bold', fontSize: 13, textAlign: 'center', paddingBottom: 20, padding: 10}}>When {this.state.profileData.first_name} posts, you'll see their posts here.</Text>
+                <View style={{flex: 1}}>
+                    <Text style={styles.noPostText1}>No posts yet</Text>
+                    <Text style={styles.noPostText2}>When {this.state.profileData.first_name} posts, you'll see their posts here.</Text>
                 </View>
           </View>
           )
         }else{
             return(
                 <View style={styles.container}>
+                    <Image
+                      source={{
+                        uri: this.state.photo,
+                      }}
+                      style={styles.imageStyle}
+                    />
                     <Text style={styles.logo}>{this.state.profileData.first_name} {this.state.profileData.last_name}</Text>
-                    {/* <Text style={styles.logo}>{this.state.profileData.email}</Text> */}
-                    <Text style={styles.logo}>{this.state.profileData.friend_count}    {this.state.userPosts.length}</Text>
-                    <Text style={styles.logo}>Friends  Posts</Text>
+                    <Text style={styles.logo}>    {this.state.profileData.friend_count}             {this.state.userPosts.length}</Text>
+                    <Text style={styles.logo}>Friends    Posts</Text>
                     <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend Wall Post",this.state.id)}>
                         <Text style={styles.loginText}>Post on Wall</Text>
                     </TouchableOpacity>
@@ -178,27 +266,24 @@ class FriendProfile extends Component {
                         <FlatList
                             data={this.state.userPosts}
                             renderItem={({item}) => (
-                                <View style={{borderWidth: 2, padding: 5, margin: 10, borderColor: '#0096c7', backgroundColor: 'white', borderRadius: 10}}>
-                                <Text style={{fontWeight: "bold", fontSize: 15, paddingBottom: 10}}>{item.author.first_name} {item.author.last_name}</Text>
-                                <Text style={{fontSize: 13, padding: 10, paddingTop: 0}}>{item.text}</Text>
-                                
-
-                                <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-start', margin: 10}}>
+                                <View style={styles.profileView1}>
+                                <Text style={styles.profileText}>{item.author.first_name} {item.author.last_name}</Text>
+                                <Text style={styles.postText}>{item.text}</Text>
+                            
+                                <View style={styles.profileView2}>
                                     <Feather name="heart" size = {15} color="red"/><Text style={{paddingLeft: 5}}>{item.numLikes}</Text>
-                                    <TouchableHighlight underlayColor={'transparent'} style={{marginLeft: 10}} onPress={() => this.likePost()}>
+                                    <TouchableHighlight underlayColor={'transparent'} style={{marginLeft: 10}} onPress={() => this.likePost(item.post_id)}>
                                         <View>
                                             <Feather name="thumbs-up" size={15} color="#0096c7"/>
                                         </View>
                                     </TouchableHighlight>
+                                    <View style={{flex: 1, alignItems: 'flex-end'}}>
+                                        <Text>{moment(item.timestamp).fromNow()}</Text>
+                                    </View>
                                 </View>
-
-                                <View style={{alignItems: 'flex-end'}}>
-                                    <Text>{this.getPostDate(item.timestamp)}</Text>
-                                </View>
-
-                                {/* <Text>{this.state.friendsList[1].user_id}</Text> */}
                                 </View>
                             )}
+                            keyExtractor={(item, index) => index.toString()}
                         />
                     </ScrollView>
                 </View>
@@ -206,15 +291,6 @@ class FriendProfile extends Component {
         }
       }
 }
-
-// const styles = StyleSheet.create({
-//   center: {
-//     flex: 1,
-//     justifyContent: "center",
-//     alignItems: "center",
-//     textAlign: "center",
-//   },
-// });
 
 export default FriendProfile;
 
@@ -229,8 +305,8 @@ const styles = StyleSheet.create({
       fontSize:15,
       textAlign: 'center',
       color:"black",
-      marginTop: 10,
-      marginBottom:10,
+      marginTop: 5,
+      marginBottom:5,
       fontStyle:'italic'
     },
     inputView:{
@@ -264,5 +340,55 @@ const styles = StyleSheet.create({
     },
     loginText:{
       color:"white"
+    },
+    imageStyle: {
+      width: 80,
+      height: 80,
+      borderWidth: 3,
+      borderRadius: 100,
+      borderColor: '#0996c7',
+      alignContent: 'center',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      marginTop: 10 
+    },
+    noPostText1:{
+      fontWeight: 'bold',
+      fontSize: 20,
+      textAlign: 'center',
+      paddingBottom: 10,
+      padding: 10
+    },
+    noPostText2: {
+      fontWeight: 'bold',
+      fontSize: 13,
+      textAlign: 'center',
+      paddingBottom: 20,
+      padding: 10
+    },
+    profileView1: {
+      borderWidth: 2,
+      padding: 5,
+      margin: 10,
+      borderColor: '#0096c7',
+      backgroundColor: 'white',
+      borderRadius: 10
+    },
+    profileText: {
+      fontWeight: "bold",
+      fontSize: 15,
+      paddingBottom: 10,
+      margin: 5
+    },
+    postText:{
+      fontSize: 13,
+      padding: 10,
+      paddingTop: 0
+    },
+    profileView2: {
+      flex: 1,
+      flexDirection: 'row',
+      justifyContent: 'flex-start',
+      margin: 5
     }
   });

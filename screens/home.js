@@ -2,7 +2,9 @@ import React, {Component} from 'react';
 import {View, Text, FlatList, ScrollView, StyleSheet} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from 'react-native-vector-icons/Feather';
-import { TouchableHighlight } from 'react-native-gesture-handler';
+import moment from "moment";
+import {showMessage} from 'react-native-flash-message';
+
 
 
 class HomeScreen extends Component {
@@ -20,39 +22,14 @@ class HomeScreen extends Component {
   componentDidMount() {
     this.unsubscribe = this.props.navigation.addListener('focus', () => {
       this.checkLoggedIn();
+      this.getData();
     });
-  
-    this.getData();
-    this.getFriends();
   }
 
   componentWillUnmount() {
     this.unsubscribe();
   }
-
-  
-  getFriends = async () => {
-    const token = await AsyncStorage.getItem('@session_token');
-    const userID = await AsyncStorage.getItem('@userID');
-    return fetch("http://localhost:3333/api/1.0.0/user/" + userID + "/friends", {
-      method: 'get',
-      headers: {
-        "X-Authorization" : token
-      }
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      console.log("Friends",responseJson);
-      this.setState({
-        isLoading: false,
-        friendsList: responseJson
-      })
-    })
-    .catch((error) => {
-      console.log(error);
-    })
-  }
-  
+    
   getData = async () => {
     const token = await AsyncStorage.getItem('@session_token');
     const userID = await AsyncStorage.getItem('@userID');
@@ -67,13 +44,27 @@ class HomeScreen extends Component {
             if(response.status === 200){
                 return response.json()
             }else if(response.status === 401){
+                showMessage({
+                  message: 'You are not authorized, please login',
+                  type: 'warning',
+                  icon: 'warning'
+                })
               this.props.navigation.navigate("Login");
+            }else if(response.status === 403){
+                showMessage({
+                  message: 'You can only view the posts of yourself or your friends',
+                  type: 'warning',
+                  icon: 'warning'
+                })
             }else{
-                throw 'Something went wrong';
+                showMessage({
+                  message: 'Something went wrong',
+                  type: 'warning',
+                  icon: 'wanring'
+                })
             }
         })
         .then((responseJson) => {
-          console.log(responseJson);
           this.setState({
             isLoading: false,
             listData: responseJson
@@ -82,33 +73,6 @@ class HomeScreen extends Component {
         .catch((error) => {
             console.log(error);
         })
-  }
-
-  likePost = async (postid) => {
-    const token = await AsyncStorage.getItem('@session_token');
-    const userID = await AsyncStorage.getItem('@userID');
-    return fetch("http://localhost:3333/api/1.0.0/user/" + userID + "/post/" + postid + "/like", {
-        method: 'POST',
-        headers: {
-            'X-Authorization' : token
-        }   
-    })
-    .then((response) => {
-        if(response.status === 200){
-            console.log("Like added");
-        }else{
-            throw 'Something went wrong';
-        }
-    })
-    .catch((error) =>{
-        console.log(error);
-    })
-  }
-
-  getPostDate = (timestamp) =>{
-    var postDate = new Date(timestamp).toLocaleDateString();
-
-    return postDate;
   }
 
   checkLoggedIn = async () => {
@@ -135,7 +99,6 @@ class HomeScreen extends Component {
     }else{
       return (
             <View style={{flex: 1}}>
-              
               <View style={{flex: 1, backgroundColor: 'white'}}>
                 <Text style={styles.logo}>Spacebook</Text>
               </View>
@@ -143,25 +106,18 @@ class HomeScreen extends Component {
                   <FlatList
                     data={this.state.listData}
                     renderItem={({item}) => (
-                        <View style={{borderWidth: 2, padding: 5, margin: 10, borderColor: '#0096c7', backgroundColor: 'white', borderRadius: 10}}>
-                          <Text style={{fontWeight: "bold", fontSize: 15, paddingBottom: 10}}>{item.author.first_name} {item.author.last_name}</Text>
-                          <Text style={{fontSize: 13, padding: 10, paddingTop: 0}}>{item.text}</Text>
-
-
-                          <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-start', margin: 10}}>
-                            <Feather name="heart" size = {15} color="red"/><Text style={{paddingLeft: 5}}>{item.numLikes}</Text>
-                            <TouchableHighlight underlayColor={'transparent'} style={{marginLeft: 10}} onPress={() => this.likePost(item.post_id)}>
-                              <View>
-                                <Feather name="thumbs-up" size={15} color="#0096c7"/>
-                              </View>
-                            </TouchableHighlight>
+                        <View style={styles.postView}>
+                          <Text style={styles.authorText}>{item.author.first_name} {item.author.last_name}</Text>
+                          <Text style={styles.postText}>{item.text}</Text>
+                            <View style={styles.bottomView}>
+                              <Feather name="heart" size = {15} color="red"/><Text style={{paddingLeft: 5}}>{item.numLikes}</Text>
+                              <View style={{flex: 1, alignItems: 'flex-end'}}>
+                              <Text>{moment(item.timestamp).fromNow()}</Text>
+                            </View>
                           </View>
-                          <View style={{alignItems: 'flex-end'}}>
-                            <Text>{this.getPostDate(item.timestamp)}</Text>
-                          </View>
-
                         </View>
                     )}
+                    keyExtractor={(item, index) => index.toString()}
                   />
               </ScrollView>
             </View>
@@ -225,5 +181,30 @@ const styles = StyleSheet.create({
   },
   loginText:{
     color:"white"
+  },
+  postView: {
+    borderWidth: 2,
+    padding: 5,
+    margin: 10,
+    borderColor: '#0096c7',
+    backgroundColor: 'white',
+    borderRadius: 10
+  },
+  authorText: {
+    fontWeight: "bold",
+    fontSize: 15,
+    paddingBottom: 10,
+    margin: 5
+  },
+  postText: {
+    fontSize: 13,
+    padding: 10,
+    paddingTop: 0
+  },
+  bottomView: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    margin: 5
   }
 });

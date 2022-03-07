@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import { View, Text, ActivityIndicator, FlatList, Button, Alert, TextInput, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import AsyncStorageLib from '@react-native-async-storage/async-storage';
+import {showMessage} from 'react-native-flash-message';
 
 class EditPost extends Component{
   constructor(props){
@@ -35,13 +35,35 @@ class EditPost extends Component{
     })
     .then((response) => {
       if(response.status === 200){
-        this.setState = ({
-          error: "Post Updated"
+        showMessage({
+          message:'Post edited successfully',
+          type: 'success',
+          icon: 'success'
         })
         this.props.navigation.navigate("Profile");
       }else if(response.status === 400){
-        this.setState = ({
-          error: "Bad Request"
+        showMessage({
+          message:'Please double check your entry',
+          type: 'warning',
+          icon: 'warning'
+        })
+      }else if(response.status === 401){
+        showMessage({
+          message: 'You are not authorised, please login',
+          type: 'warning',
+          icon: 'warning'
+        })
+      }else if(response.status === 403){
+        showMessage({
+          message: 'You can only edit your own posts',
+          type: 'warning',
+          icon: 'warning'
+        })
+      }else{
+        showMessage({
+          message: 'Something went wrong!',
+          type: 'warning',
+          icon: 'warning'
         })
       }
     })
@@ -59,7 +81,7 @@ class EditPost extends Component{
                 defaultValue={this.state.originalPost}
                 value={this.state.newText}
                 multiline = 'true'
-                style={{width: '90%', backgroundColor:"#f8f9fa", borderColor: '#0096c7', borderWidth: 2, height: 100, margin: 20, padding: 20}}
+                style={styles.postInput}
               />
               <Pressable style={styles.button} onPress={() => this.editPost()}>
                 <Text style={styles.text}>Update</Text>
@@ -89,6 +111,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.25,
     color: 'white',
   },
+  postInput: {
+    width: '90%',
+    backgroundColor:"#f8f9fa",
+    borderColor: '#0096c7',
+    borderWidth: 2,
+    height: 100,
+    margin: 20,
+    padding: 20
+  }
 });
 
 export default EditPost;

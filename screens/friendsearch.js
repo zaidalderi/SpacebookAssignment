@@ -1,33 +1,8 @@
 import React, { Component } from "react";
-import { View, Button, Text, StyleSheet, TextInput, Pressable,ScrollView } from "react-native";
+import { View, Text, StyleSheet, TextInput, Pressable,ScrollView } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FlatList } from "react-native-gesture-handler";
-
-// const FriendSearch = ({ navigation }) => {
-//   return (
-//     <View>
-//       <TextInput
-//         placeholder="Search Spacebook"
-//         style={{padding:5, borderWidth:1, margin:5, borderRadius: 30}}
-//       />
-//       <Button
-//         title="Search"
-//         style={{borderRadius: 25}}
-//       />
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   center: {
-//     flex: 1,
-//     justifyContent: "center",
-//     alignItems: "center",
-//     textAlign: "center",
-//   },
-// });
-
-// export default FriendSearch;
+import {showMessage} from 'react-native-flash-message';
 
 class FriendSearch extends Component {
   constructor(props){
@@ -40,10 +15,14 @@ class FriendSearch extends Component {
       friendsList: []
     };
   }
+    componentDidMount() {
+    this.unsubscribe = this.props.navigation.addListener('focus', () => {
+    });
+  }
 
-  componentDidMount(){
-    this.getFriendsList();
-}
+  componentWillUnmount() {
+    this.unsubscribe();
+  }
 
   searchFriends = async () => {
     const token = await AsyncStorage.getItem('@session_token');
@@ -53,34 +32,35 @@ class FriendSearch extends Component {
         "X-Authorization" : token
       }
     })
-    .then((response) => response.json())
+    .then((response) => {
+      if(response.status === 200){
+          return response.json()
+      }else if(response.status === 401){
+          showMessage({
+            message: 'You are not authorized, please login',
+            type: 'success',
+            icon: 'success'
+          })
+        this.props.navigation.navigate("Login");
+      }else if(response.status === 400){
+          showMessage({
+            message: 'Please check your entry',
+            type: 'warning',
+            icon: 'warning'
+          })
+      }else{
+          showMessage({
+            message: 'Something went wrong',
+            type: 'warning',
+            icon: 'warning'
+          })
+      }
+  })
     .then((responseJson) => {
       console.log(responseJson);
       this.setState({
         isLoading: false,
         nameList: responseJson
-      })
-    })
-    .catch((error) => {
-      console.log(error);
-    })
-  }
-
-  getFriendsList = async () => {
-    const token = await AsyncStorage.getItem('@session_token');
-    const userID = await AsyncStorage.getItem('@userID');
-    return fetch("http://localhost:3333/api/1.0.0/user/" + userID + "/friends", {
-      method: 'get',
-      headers: {
-        "X-Authorization" : token
-      }
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      console.log("Freinds",responseJson);
-      this.setState({
-        isLoading: false,
-        friendsList: responseJson
       })
     })
     .catch((error) => {
@@ -97,8 +77,31 @@ class FriendSearch extends Component {
       }
     })
     .then((response) => {
-      if(response.status == 200){
-        console.log("Friend Request Sent");
+      if(response.status == 201){
+        showMessage({
+          message: 'Friend request sent',
+          type: 'success',
+          icon: 'success'
+        })
+      }else if(response.status === 401){
+        showMessage({
+          message: 'You are not authorised, please login',
+          type: 'warning',
+          icon: 'warning'
+        })
+        this.props.navigation.navigate('Login');
+      }else if(response.status === 403){
+        showMessage({
+          message: 'User is already added as a friend',
+          type: 'warning',
+          icon: 'warning'
+        })
+      }else{
+        showMessage({
+          message: 'Something went wrong!',
+          type: 'warning',
+          icon: 'warning'
+        })
       }
     })
     .catch((error) => {
@@ -113,7 +116,7 @@ class FriendSearch extends Component {
         placeholder="Search Spacebook..."
         onChangeText={(name) => this.setState({name})}
         value={this.state.name}
-        style={{width: '90%', backgroundColor:"#f8f9fa", borderColor: '#0096c7', borderWidth: 2, height: 50, justifyContent: 'center', margin: 20, padding: 20}}
+        style={styles.searchBar}
       />
       <Pressable style={styles.button} onPress={() => this.searchFriends()}>
         <Text style={styles.text}>Search</Text>
@@ -123,9 +126,9 @@ class FriendSearch extends Component {
         <FlatList
           data={this.state.nameList}
           renderItem={({item}) => (
-            <View style={{flex: 1, flexDirection: 'row',borderWidth: 2, borderColor: '#0096c7', backgroundColor: 'white',marginBottom: 10}}>
-              <Text style={{fontWeight:'bold', alignSelf: 'center',marginLeft: 10}}>{item.user_givenname} {item.user_familyname}</Text>
-              <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-end', margin: 10}}>
+            <View style={styles.resultsView1}>
+              <Text style={styles.nameText}>{item.user_givenname} {item.user_familyname}</Text>
+              <View style={styles.resultsView2}>
                 <Pressable style={styles.visitButton} onPress={() => this.props.navigation.navigate('Friend Profile', item.user_id)}>
                   <Text style={styles.buttonText}>Visit Profile</Text>
                 </Pressable>
@@ -135,6 +138,7 @@ class FriendSearch extends Component {
               </View>
             </View>
           )}
+          keyExtractor={(item, index) => index.toString()}
         />
       </View>
     </ScrollView>
@@ -185,5 +189,34 @@ const styles = StyleSheet.create({
     letterSpacing: 0.25,
     color: 'white',
   },
+  searchBar: {
+    width: '90%',
+    backgroundColor:"#f8f9fa",
+    borderColor: '#0096c7',
+    borderWidth: 2,
+    height: 50,
+    justifyContent: 'center',
+    margin: 20,
+    padding: 20
+  },
+  resultsView1: {
+    flex: 1,
+    flexDirection: 'row',
+    borderWidth: 2,
+    borderColor: '#0096c7',
+    backgroundColor: 'white',
+    marginBottom: 10
+  },
+  nameText: {
+    fontWeight:'bold',
+    alignSelf: 'center',
+    marginLeft: 10
+  },
+  resultsView2: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    margin: 10
+  }
 });
 export default FriendSearch;

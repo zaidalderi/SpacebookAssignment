@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import { View,Button, TouchableOpacity, StyleSheet, Text, Image } from 'react-native';
-import { ScrollView, TextInput } from 'react-native-gesture-handler';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { showMessage } from 'react-native-flash-message'
 
 class LogoutScreen extends Component{
     constructor(props){
@@ -43,10 +43,25 @@ class LogoutScreen extends Component{
         .then((response) => {
             if(response.status === 200){
                 this.props.navigation.navigate("Login");
+                showMessage({
+                    message: "Logged out successfully",
+                    type: 'success',
+                    icon: 'success'
+                  })
             }else if(response.status === 401){
+                console.log('You are not logged in')
+                showMessage({
+                    message: "You are not logged in",
+                    type: 'warning',
+                    icon: 'warning'
+                  })
                 this.props.navigation.navigate("Login");
             }else{
-                throw 'Something went wrong';
+                showMessage({
+                    message: "Something went wrong!",
+                    type: 'warning',
+                    icon: 'warning'
+                  })
             }
         })
         .catch((error) => {

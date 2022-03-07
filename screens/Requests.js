@@ -1,31 +1,8 @@
-import React, { Component } from "react";
-import { View, Button, Text, StyleSheet, TextInput, Pressable,ScrollView,ActivityIndicator } from "react-native";
+import React, {Component} from "react";
+import {View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator} from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FlatList } from "react-native-gesture-handler";
-
-
-// const Friends = ({ navigation }) => {
-//   return (
-//     <View style={styles.center}>
-//       <Text>This is the friends screen</Text>
-//       <Button
-//         title="Friend Requests"
-//         onPress={() => navigation.navigate("Friend Requests")} // We added an onPress event which would navigate to the About screen
-//       />
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   center: {
-//     flex: 1,
-//     justifyContent: "center",
-//     alignItems: "center",
-//     textAlign: "center",
-//   },
-// });
-
-// export default Friends;
+import {FlatList} from "react-native-gesture-handler";
+import {showMessage} from 'react-native-flash-message';
 
 class FriendRequests extends Component {
   constructor(props){
@@ -33,26 +10,47 @@ class FriendRequests extends Component {
 
     this.state = {
       isLoading: true,
-      requestsList: []
+      requestsList: [],
+      message: ''
     };
   }
+  componentDidMount() {
+    this.unsubscribe = this.props.navigation.addListener('focus', () => {
+      this.getRequests();
+    });
+  }
 
-  componentDidMount(){
-    this.getRequests();
+  componentWillUnmount() {
+    this.unsubscribe();
   }
 
   getRequests = async () => {
     const token = await AsyncStorage.getItem('@session_token');
-    const userID = await AsyncStorage.getItem('@userID');
     return fetch("http://localhost:3333/api/1.0.0/friendrequests", {
       method: 'get',
       headers: {
         "X-Authorization" : token
       }
     })
-    .then((response) => response.json())
+    .then((response) => {
+      if(response.status === 200){
+          return response.json()
+      }else if(response.status === 401){
+          showMessage({
+            message: 'You are not authorized, please login',
+            type: 'warning',
+            icon: 'warning'
+          })
+        this.props.navigation.navigate("Login");
+      }else{
+          showMessage({
+            message: 'Something went wrong',
+            type: 'warning',
+            icon: 'warning'
+          })
+      }
+  })
     .then((responseJson) => {
-      console.log("Friend Requests",responseJson);
       this.setState({
         isLoading: false,
         requestsList: responseJson
@@ -71,7 +69,29 @@ class FriendRequests extends Component {
         "X-Authorization" : token
       }
     })
-    .then((response) => response.json())
+    .then((response) => {
+      if(response.status === 200){
+        showMessage({
+          message: 'Friend added',
+          type: 'success',
+          icon: 'success'
+        })  
+        return response.json()
+      }else if(response.status === 401){
+          showMessage({
+            message: 'You are not authorized, please login',
+            type: 'warning',
+            icon: 'warning'
+          })
+        this.props.navigation.navigate("Login");
+      }else{
+          showMessage({
+            message: 'Something went wrong',
+            type: 'warning',
+            icon: 'warning'
+          })
+      }
+    })
     .then((responseJson) => {
       console.log("Friend Added",responseJson);
       this.setState({
@@ -93,9 +113,27 @@ class FriendRequests extends Component {
     })
     .then((response) => {
       if(response.status === 200){
-        console.log("Friend Added");
+        showMessage({
+          message: 'Friend request removed',
+          type: 'success',
+          icon: 'success'
+        })
+        return response.json()
+      }else if(response.status === 401){
+          showMessage({
+            message: 'You are not authorized, please login',
+            type: 'warning',
+            icon: 'warning'
+          })
+        this.props.navigation.navigate("Login");
+      }else{
+          showMessage({
+            message: 'Something went wrong',
+            type: 'warning',
+            icon: 'warning'
+          })
       }
-  })
+    })
     .catch((error) => {
       console.log(error);
     })
@@ -112,57 +150,47 @@ class FriendRequests extends Component {
         </View>
       );
     }else{
-      return(
-        // <ScrollView>
-        //   <View>
-        //     <Text style={{fontWeight: 'bold', fontSize: 20, textAlign: 'center', paddingBottom: 20, paddingTop: 10}}>Friend Requests</Text>
-        //     <FlatList
-        //       data={this.state.requestsList}
-        //       renderItem={({item}) => (
-        //       <View>
-        //         <Text style={{fontWeight: 'bold', fontSize: 15, padding: 10}}>{item.first_name} {item.last_name}</Text>
-        //         <Button
-        //           title="Confirm"
-        //           onPress={() => this.acceptRequest(item.user_id)}
-        //         />
-        //         <Button
-        //           title="Remove"
-        //           onPress={() => this.rejectRequest(item.user_id)}
-        //         />
-        //       </View>
-        //       )}
-        //     />
-        //   </View>
-        // </ScrollView>
-
-        <View style={{flex: 1}}>
-          <ScrollView style={{flex: 1}}>
-            <View>
-              <Text style={{fontWeight: 'bold', fontSize: 20, textAlign: 'center', paddingBottom: 20, padding: 10}}>Friend Requests</Text>
-              <View style={{paddingLeft: 10, paddingRight: 10}}>
-                <FlatList
-                  data={this.state.requestsList}
-                  renderItem={({item}) => (
-                  <View style={{flex: 1, flexDirection: 'row',borderWidth: 2, borderColor: '#0096c7', backgroundColor: 'white',marginBottom: 10}}>
-                    <Text style={{fontWeight: 'bold', alignSelf: 'center', marginLeft: 10}}>{item.first_name} {item.last_name}</Text>
-                    <View style={{flex: 1, flexDirection: 'row', justifyContent: 'flex-end', margin: 10}}>
-                      <Pressable style={styles.acceptButton} onPress={() => this.acceptRequest()}>
-                        <Text style={styles.buttonText}>Confirm</Text>
-                      </Pressable>
-                      <Pressable style={styles.rejectButton} onPress={() => this.rejectRequest()}>
-                        <Text style={styles.buttonText}>Reject</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                  )}
-                />
-              </View>
+      if(this.state.requestsList.length == 0){
+        return(
+          <View style={{flex: 1}}>
+            <View style={{flex: 1}}>
+                <Text style={styles.title}>Friend Requests</Text>
             </View>
-          </ScrollView>
-        </View>
-
-
-      )
+            <View style={{flex: 2}}>
+              <Text style={styles.noRequestText}>You have no pending friend requests</Text> 
+            </View>
+          </View>
+        )
+      }else{
+        return(
+          <View style={{flex: 1}}>
+            <ScrollView style={{flex: 1}}>
+              <View>
+                <Text style={styles.title}>Friend Requests</Text>
+                <View style={{paddingLeft: 10, paddingRight: 10}}>
+                  <FlatList
+                    data={this.state.requestsList}
+                    renderItem={({item}) => (
+                    <View style={styles.requestView1}>
+                      <Text style={styles.friendNameText}>{item.first_name} {item.last_name}</Text>
+                      <View style={styles.requestView2}>
+                        <Pressable style={styles.acceptButton} onPress={() => this.acceptRequest(item.user_id)}>
+                          <Text style={styles.buttonText}>Confirm</Text>
+                        </Pressable>
+                        <Pressable style={styles.rejectButton} onPress={() => this.rejectRequest(item.user_id)}>
+                          <Text style={styles.buttonText}>Reject</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                    )}
+                    keyExtractor={(item, index) => index.toString()}
+                  />
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        )
+      }
     }
   }
 }
@@ -205,5 +233,38 @@ const styles = StyleSheet.create({
     marginTop:0,
     marginBottom:10,
     marginLeft: 100
+  },
+  title: {
+    fontWeight: 'bold',
+    fontSize: 20,
+    textAlign: 'center',
+    paddingBottom: 20,
+    padding: 10
+  },
+  noRequestText: {
+    textAlign: 'center',
+    paddingBottom: 20,
+    padding: 10,
+    fontSize: 15,
+    fontWeight: 'bold'
+  },
+  requestView1: {
+    flex: 1,
+    flexDirection: 'row',
+    borderWidth: 2,
+    borderColor: '#0096c7',
+    backgroundColor: 'white',
+    marginBottom: 10
+  },
+  friendNameText: {
+    fontWeight: 'bold',
+    alignSelf: 'center',
+    marginLeft: 10
+  },
+  requestView2: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    margin: 10
   }
 });
