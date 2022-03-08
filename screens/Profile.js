@@ -77,7 +77,20 @@ class Profile extends Component {
       }
     })
     .then((res) => {
-      return res.blob();
+      if(res.status === 200){
+        return res.blob();
+      }else if(res.status === 401){
+        showMessage({
+          message: "You are not authorized, please login",
+          type: 'warning',
+        })
+        this.props.navigation.navigate('Login');
+      }else{
+        showMessage({
+          message: "Something went wrong",
+          type: 'warning',
+        })
+      }
     })
     .then((resBlob) => {
       let data = URL.createObjectURL(resBlob);
@@ -138,6 +151,34 @@ class Profile extends Component {
         </View>
       );
     }else{
+      if(this.state.userPosts.length === 0){
+        return(
+          <View style={styles.container}>
+            <Image
+              source={{
+                uri: this.state.photo,
+              }}
+              style={styles.imageStyle}
+            />
+            <Text style={styles.logo}>{this.state.listData.first_name} {this.state.listData.last_name}</Text>
+            <Text style={styles.logo}>    {this.state.listData.friend_count}             {this.state.userPosts.length}</Text>
+            <Text style={styles.logo}>Friends    Posts</Text>
+            <View style={{flex:1, flexDirection: 'row', justifyContent: 'space-around', borderBottomWidth: 3, borderBottomColor: '#0096c7'}}>
+              <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Update Profile")}>
+                  <Text style={styles.loginText}>Edit Profile</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Camera")}>
+                  <Text style={styles.loginText}>+ Profile Photo</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{flex: 5, justifyContent: 'center', alignContent: 'center'}}>
+              <Text style={styles.noPostText}>No Posts Yet</Text>
+            </View>
+          </View>
+        )
+      }
       return(
         <View style={styles.container}>
 
@@ -189,8 +230,6 @@ class Profile extends Component {
           </ScrollView>
 
         </View>
-
-        
       )
     }
   }
@@ -285,5 +324,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     padding: 10,
     paddingTop: 0
+  },
+  noPostText: {
+    textAlign: 'center',
+    paddingBottom: 20,
+    padding: 10,
+    fontSize: 20,
+    fontWeight: 'bold'
   }
 });

@@ -5,6 +5,7 @@ import { FlatList } from "react-native-gesture-handler";
 import Feather from 'react-native-vector-icons/Feather';
 import moment from 'moment';
 import { showMessage } from 'react-native-flash-message';
+import Ionicons from 'react-native-vector-icons/Ionicons'
 
 class FriendProfile extends Component {
     constructor(props){
@@ -101,7 +102,20 @@ class FriendProfile extends Component {
           }
         })
         .then((res) => {
-          return res.blob();
+          if(res.status === 200){
+            return res.blob();
+          }else if(res.status === 401){
+            showMessage({
+              message: "You are not authorized, please login",
+              type: 'warning',
+            })
+            this.props.navigation.navigate('Login');
+          }else{
+            showMessage({
+              message: "Something went wrong",
+              type: 'warning',
+            })
+          }
         })
         .then((resBlob) => {
           let data = URL.createObjectURL(resBlob);
@@ -109,22 +123,6 @@ class FriendProfile extends Component {
             photo: data,
             isLoading: false
           });
-        })
-        .then((response) => {
-          if(response.status === 200){
-            return response.json()
-          }else if(response.status === 401){
-            showMessage({
-              message: "You are not authorized, please login",
-              type: 'warning',
-            })
-            this.props.navigation.navigate('Login');
-          }else {
-            showMessage({
-              message: "Something went wrong",
-              type: 'warning',
-            })
-          }
         })
         .catch((err) => {
           console.log("error", err)
@@ -227,7 +225,7 @@ class FriendProfile extends Component {
         }else if(this.state.userPosts.length == 0){
           return(
             <View style={styles.container}>
-                  <Image
+                <Image
                     source={{
                       uri: this.state.photo,
                     }}
@@ -237,15 +235,20 @@ class FriendProfile extends Component {
                     <Text style={styles.logo}>{this.state.profileData.first_name} {this.state.profileData.last_name}</Text>
                     <Text style={styles.logo}>{this.state.profileData.friend_count}    {this.state.userPosts.length}</Text>
                     <Text style={styles.logo}>Friends  Posts</Text>
-                    <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend Wall Post",this.state.id)}>
-                        <Text style={styles.loginText}>Post on Wall</Text>
-                    </TouchableOpacity>
+                    <View style={{flex:1, flexDirection: 'row', justifyContent: 'space-around'}}>
+                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend Wall Post",this.state.id)}>
+                          <Text style={styles.loginText}>Post on Wall</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friends",this.state.id)}>
+                          <Ionicons name='people' size={20} color='white'/>
+                      </TouchableOpacity>
+                    </View>
                 </View>
                 <View style={{flex: 1}}>
                     <Text style={styles.noPostText1}>No posts yet</Text>
                     <Text style={styles.noPostText2}>When {this.state.profileData.first_name} posts, you'll see their posts here.</Text>
                 </View>
-          </View>
+            </View>
           )
         }else{
             return(
@@ -259,10 +262,15 @@ class FriendProfile extends Component {
                     <Text style={styles.logo}>{this.state.profileData.first_name} {this.state.profileData.last_name}</Text>
                     <Text style={styles.logo}>    {this.state.profileData.friend_count}             {this.state.userPosts.length}</Text>
                     <Text style={styles.logo}>Friends    Posts</Text>
-                    <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend Wall Post",this.state.id)}>
-                        <Text style={styles.loginText}>Post on Wall</Text>
-                    </TouchableOpacity>
-                    <ScrollView style={{flex: 1}}>
+                    <View style={{flex:1, flexDirection: 'row', justifyContent: 'space-around'}}>
+                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend Wall Post",this.state.id)}>
+                          <Text style={styles.loginText}>Post on Wall</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friends",this.state.id)}>
+                          <Ionicons name='people' size={20} color='white'/>
+                      </TouchableOpacity>
+                    </View>
+                    <ScrollView style={{flex: 5}}>
                         <FlatList
                             data={this.state.userPosts}
                             renderItem={({item}) => (
@@ -328,18 +336,18 @@ const styles = StyleSheet.create({
       fontSize:11
     },
     loginBtn:{
-      width:"50%",
+      width:"30%",
       backgroundColor:"#0096c7",
       borderRadius: 5,
       height:50,
       alignItems:"center",
       justifyContent:"center",
       marginTop:20,
-      marginBottom:10,
-      marginLeft: 100
+      marginBottom:10
     },
     loginText:{
-      color:"white"
+      color:"white",
+      fontWeight: 'bold'
     },
     imageStyle: {
       width: 80,

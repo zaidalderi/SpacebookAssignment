@@ -9,7 +9,8 @@ class Friends extends Component {
 
     this.state = {
       isLoading: true,
-      listData: []
+      listData: [],
+      friendUserID: this.props.route.params
     };
   }
 
@@ -24,48 +25,92 @@ class Friends extends Component {
   }
 
   getData = async () => {
-    const token = await AsyncStorage.getItem('@session_token');
-    const userID = await AsyncStorage.getItem('@userID');
-    return fetch("http://localhost:3333/api/1.0.0/user/" + userID + "/friends", {
-      method: 'get',
-      headers: {
-        "X-Authorization" : token
-      }
-    })
-    .then((response) => {
-      if(response.status === 200){
-          return response.json()
-      }else if(response.status === 401){
-          showMessage({
-            message: 'You are not authorized, please login',
-            type: 'warning',
-            icon: 'warning'
-          })
-        this.props.navigation.navigate("Login");
-      }else if(response.status === 403){
-          showMessage({
-            message: 'You can only view the friends of yourself or your friends',
-            type: 'warning',
-            icon: 'warning'
-          })
-      }else{
-          showMessage({
-            message: 'Something went wrong',
-            type: 'warning',
-            icon: 'wanring'
-          })
-      }
-  })
-    .then((responseJson) => {
-      console.log("Friends",responseJson);
-      this.setState({
-        isLoading: false,
-        listData: responseJson
+      if(this.state.friendUserID != null){
+        const token = await AsyncStorage.getItem('@session_token');
+        return fetch("http://localhost:3333/api/1.0.0/user/" + this.state.friendUserID + "/friends", {
+        method: 'get',
+        headers: {
+          "X-Authorization" : token
+        }
       })
-    })
-    .catch((error) => {
-      console.log(error);
-    })
+      .then((response) => {
+        if(response.status === 200){
+            return response.json()
+        }else if(response.status === 401){
+            showMessage({
+              message: 'You are not authorized, please login',
+              type: 'warning',
+              icon: 'warning'
+            })
+          this.props.navigation.navigate("Login");
+        }else if(response.status === 403){
+            showMessage({
+              message: 'You can only view the friends of yourself or your friends',
+              type: 'warning',
+              icon: 'warning'
+            })
+        }else{
+            showMessage({
+              message: 'Something went wrong',
+              type: 'warning',
+              icon: 'wanring'
+            })
+        }
+      })
+      .then((responseJson) => {
+        console.log("Friends",responseJson);
+        this.setState({
+          isLoading: false,
+          listData: responseJson
+        })
+      })
+      .catch((error) => {
+        console.log(error);
+      })
+    }else{
+        const token = await AsyncStorage.getItem('@session_token');
+        const userID = await AsyncStorage.getItem('@userID');
+        return fetch("http://localhost:3333/api/1.0.0/user/" + userID + "/friends", {
+        method: 'get',
+        headers: {
+          "X-Authorization" : token
+        }
+      })
+      .then((response) => {
+        if(response.status === 200){
+            return response.json()
+        }else if(response.status === 401){
+            showMessage({
+              message: 'You are not authorized, please login',
+              type: 'warning',
+              icon: 'warning'
+            })
+          this.props.navigation.navigate("Login");
+        }else if(response.status === 403){
+            showMessage({
+              message: 'You can only view the friends of yourself or your friends',
+              type: 'warning',
+              icon: 'warning'
+            })
+        }else{
+            showMessage({
+              message: 'Something went wrong',
+              type: 'warning',
+              icon: 'wanring'
+            })
+        }
+      })
+      .then((responseJson) => {
+        console.log("Friends",responseJson);
+        this.setState({
+          isLoading: false,
+          listData: responseJson
+        })
+      })
+      .catch((error) => {
+        console.log(error);
+      })
+    }
   }
 
   render(){
@@ -79,37 +124,78 @@ class Friends extends Component {
         </View>
       );
     }else{
-      return(
-        <View style={{flex: 1}}>
-          <ScrollView style={{flex: 1}}>
-            <View>
-              <Text style={styles.titleText}>My Friends</Text>
-              <View style={{paddingLeft: 10, paddingRight: 10}}>
-                <FlatList
-                  data={this.state.listData}
-                  renderItem={({item}) => (
-                  <View style={styles.profileView}>
-                    <Text style={styles.nameText}>{item.user_givenname} {item.user_familyname}</Text>
-                    <View style={styles.requestsButtonView}>
-                      <Pressable style={styles.profileButton} onPress={() => this.props.navigation.navigate("Friend Profile",item.user_id)}>
-                        <Text style={styles.buttonText}>View Profile</Text>
-                      </Pressable>
+      if(this.state.friendUserID != null){
+        return(
+          <View style={{flex: 1}}>
+            <ScrollView style={{flex: 1}}>
+              <View>
+                <Text style={styles.titleText}>Friends</Text>
+                <View style={{paddingLeft: 10, paddingRight: 10}}>
+                  <FlatList
+                    data={this.state.listData}
+                    renderItem={({item}) => (
+                    <View style={styles.profileView}>
+                      <Text style={styles.nameText2}>{item.user_givenname} {item.user_familyname}</Text>
                     </View>
-                  </View>
-                  )}
-                  keyExtractor={(item, index) => index.toString()}
-                />
+                    )}
+                    keyExtractor={(item, index) => index.toString()}
+                  />
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        )
+      }else{
+        if(this.state.listData.length === 0){
+          return(
+            <View style={{flex: 1}}>
+              <View style={{flex: 1}}>
+                  <Text style={styles.titleText}>Friends</Text>
+              </View>
+              <View style={{flex: 2}}>
+                <Text style={styles.noFriendText}>You have no friends added</Text>
+                <View style={{flex: 1}}>
+                  <Pressable style={styles.requestsButton} onPress={() => this.props.navigation.navigate("Friend Requests")}>
+                    <Text style={styles.buttonText}>Friend Requests</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
-          </ScrollView>
-
-          <View style={{flex: 1}}>
-              <Pressable style={styles.requestsButton} onPress={() => this.props.navigation.navigate("Friend Requests")}>
-                <Text style={styles.buttonText}>Friend Requests</Text>
-              </Pressable>
-          </View>
-        </View>
-      )
+          )
+        }else{
+          return(
+            <View style={{flex: 1}}>
+              <ScrollView style={{flex: 1}}>
+                <View>
+                  <Text style={styles.titleText}>My Friends</Text>
+                  <View style={{paddingLeft: 10, paddingRight: 10}}>
+                    <FlatList
+                      data={this.state.listData}
+                      renderItem={({item}) => (
+                      <View style={styles.profileView}>
+                        <Text style={styles.nameText}>{item.user_givenname} {item.user_familyname}</Text>
+                        <View style={styles.requestsButtonView}>
+                          <Pressable style={styles.profileButton} onPress={() => this.props.navigation.navigate("Friend Profile",item.user_id)}>
+                            <Text style={styles.buttonText}>View Profile</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                      )}
+                      keyExtractor={(item, index) => index.toString()}
+                    />
+                  </View>
+                </View>
+              </ScrollView>
+    
+              <View style={{flex: 1}}>
+                  <Pressable style={styles.requestsButton} onPress={() => this.props.navigation.navigate("Friend Requests")}>
+                    <Text style={styles.buttonText}>Friend Requests</Text>
+                  </Pressable>
+              </View>
+            </View>
+          )
+        }
+      }
     }
   }
 }
@@ -169,6 +255,18 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    margin: 10
+  },
+  noFriendText: {
+    textAlign: 'center',
+    paddingBottom: 20,
+    padding: 10,
+    fontSize: 15,
+    fontWeight: 'bold'
+  },
+  nameText2: {
+    fontWeight: 'bold',
+    alignSelf: 'center',
     margin: 10
   }
 });

@@ -41,8 +41,8 @@ class ExpandPost extends Component {
           }else if(response.status === 401){
               showMessage({
                 message: 'You are not authorized, please login',
-                type: 'success',
-                icon: 'success'
+                type: 'warning',
+                icon: 'warning'
               })
             this.props.navigation.navigate("Login");
           }else if(response.status === 403){
@@ -85,23 +85,27 @@ class ExpandPost extends Component {
           if(response.status === 200){
             showMessage({
               message: "Post Deleted",
-              type: 'warning',
+              type: 'success',
+              icon: 'success'
             })
             this.props.navigation.navigate("Profile");
           }else if(response.status === 401){
             showMessage({
               message: "You are not authorized, please login",
               type: 'warning',
+              icon: 'warning'
             })
           }else if(response.status === 403){
             showMessage({
               message: "You can only delete your own posts",
               type: 'warning',
+              icon: 'warning'
             })
           }else{
             showMessage({
               message: "Something went wrong",
               type: 'warning',
+              icon: 'warning'
             })
           }
         })

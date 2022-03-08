@@ -63,7 +63,7 @@ class LoginScreen extends Component{
           .then(async (responseJson) => {
               await AsyncStorage.setItem('@session_token', responseJson.token);
               await AsyncStorage.setItem('@userID',responseJson.id);
-              this.props.navigation.navigate("Home");
+              this.props.navigation.navigate('Home');
           })
           .catch((error) => {
               console.log(error);
@@ -89,6 +89,7 @@ class LoginScreen extends Component{
                         value={this.state.email}
                         onChangeText={(email) => this.setState({email})}
                     />
+
                 </View>
                 <View style={styles.inputView} >
                     <TextInput  
