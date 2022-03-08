@@ -83,8 +83,7 @@ class HomeScreen extends Component {
   };
 
   render() {
-
-    if (this.state.isLoading){
+    if(this.state.isLoading){
       return (
         <View
           style={{
@@ -97,33 +96,45 @@ class HomeScreen extends Component {
         </View>
       );
     }else{
-      return (
-            <View style={{flex: 1}}>
-              <View style={{flex: 1, backgroundColor: 'white'}}>
-                <Text style={styles.logo}>Spacebook</Text>
-              </View>
-              <ScrollView style={{flex: 10, backgroundColor: 'white'}}>
-                  <FlatList
-                    data={this.state.listData}
-                    renderItem={({item}) => (
-                        <View style={styles.postView}>
-                          <Text style={styles.authorText}>{item.author.first_name} {item.author.last_name}</Text>
-                          <Text style={styles.postText}>{item.text}</Text>
-                            <View style={styles.bottomView}>
-                              <Feather name="heart" size = {15} color="red"/><Text style={{paddingLeft: 5}}>{item.numLikes}</Text>
-                              <View style={{flex: 1, alignItems: 'flex-end'}}>
-                              <Text>{moment(item.timestamp).fromNow()}</Text>
-                            </View>
+      if(this.state.listData.length === 0){
+        return(
+          <View style={{flex: 1}}>
+            <View style={{flex: 1, backgroundColor: 'white'}}>
+              <Text style={styles.logo}>Spacebook</Text>
+            </View>
+            <View style={{flex: 10, backgroundColor: 'white', justifyContent: 'center'}}>
+              <Text style={styles.noPostText}>No posts</Text>
+            </View>
+          </View>
+        ); 
+      }else{
+        return(
+          <View style={{flex: 1}}>
+            <View style={{flex: 1, backgroundColor: 'white'}}>
+              <Text style={styles.logo}>Spacebook</Text>
+            </View>
+            <ScrollView style={{flex: 10, backgroundColor: 'white'}}>
+                <FlatList
+                  data={this.state.listData}
+                  renderItem={({item}) => (
+                      <View style={styles.postView}>
+                        <Text style={styles.authorText}>{item.author.first_name} {item.author.last_name}</Text>
+                        <Text style={styles.postText}>{item.text}</Text>
+                          <View style={styles.bottomView}>
+                            <Feather name="heart" size = {15} color="red"/><Text style={{paddingLeft: 5}}>{item.numLikes}</Text>
+                            <View style={{flex: 1, alignItems: 'flex-end'}}>
+                            <Text>{moment(item.timestamp).fromNow()}</Text>
                           </View>
                         </View>
-                    )}
-                    keyExtractor={(item, index) => index.toString()}
-                  />
-              </ScrollView>
-            </View>
-      );
+                      </View>
+                  )}
+                  keyExtractor={(item, index) => index.toString()}
+                />
+            </ScrollView>
+          </View>
+        ); 
+      }
     }
-    
   }
 }
 
@@ -206,5 +217,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
     margin: 5
+  },
+  noPostText: {
+    textAlign: 'center',
+    paddingBottom: 20,
+    padding: 10,
+    fontSize: 20,
+    fontWeight: 'bold'
   }
 });
