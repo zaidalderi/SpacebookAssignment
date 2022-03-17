@@ -70,7 +70,7 @@ class FriendsNavigator extends Component {
         <Stack.Screen name='Friend' component={Friends} options={{ headerShown: false }} />
         <Stack.Screen name='Friend Requests' component={FriendRequests} options={{ title: false }} />
         <Stack.Screen name='Friend Profile' component={FriendProfile} options={{ title: false }} />
-        <Stack.Screen name='Friend Wall Post' component={FriendWallPost} options={{ title: false }} />
+        <Stack.Screen name='Friend Wall Post' component={FriendWallPost} />
         <Stack.Screen name='Expand Post' component={ExpandPost} options={{ title: false }} />
         <Stack.Screen name="Friend's Friends" component={Friends} options={{ title: false }} />
       </Stack.Navigator>
