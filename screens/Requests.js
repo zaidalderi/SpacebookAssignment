@@ -150,7 +150,7 @@ class FriendRequests extends Component {
         </View>
       );
     }else{
-      if(this.state.requestsList.length == 0){
+      if(this.state.requestsList.length === 0){
         return(
           <View style={{flex: 1}}>
             <View style={{flex: 1}}>

@@ -96,7 +96,7 @@ class HomeScreen extends Component {
         </View>
       );
     }else{
-      if(this.state.listData.length === 0){
+      if(this.state.listData === null){
         return(
           <View style={{flex: 1}}>
             <View style={{flex: 1, backgroundColor: 'white'}}>

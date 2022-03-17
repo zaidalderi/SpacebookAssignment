@@ -228,7 +228,7 @@ class FriendProfile extends Component {
               />
             </View>
           );
-        }else if(this.state.userPosts.length == 0){
+        }else if(this.state.userPosts.length === 0){
           return(
             <View style={styles.container}>
                 <Image
