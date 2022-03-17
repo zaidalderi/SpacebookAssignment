@@ -60,7 +60,6 @@ class ExpandPost extends Component {
           }
       })
         .then((responseJson) => {
-          console.log(responseJson);
           this.setState({
             isLoading: false,
             postData: responseJson

@@ -4,8 +4,6 @@ import { TextInput } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { showMessage } from 'react-native-flash-message';
 
-
-
 class LoginScreen extends Component{
     
     constructor(props){

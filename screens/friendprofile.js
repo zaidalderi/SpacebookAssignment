@@ -15,10 +15,7 @@ class FriendProfile extends Component {
             isLoading: true,
             id: this.props.route.params,
             profileData: [],
-            myfriendsList: [],
-            friendsFriendList: [],
             userPosts: [],
-            loggedInUserFriends: [],
             photo: null
         };
     }
@@ -26,7 +23,6 @@ class FriendProfile extends Component {
     componentDidMount() {
       this.unsubscribe = this.props.navigation.addListener('focus', () => {
         this.getPosts();
-        this.getFriendsList();
         this.getData();
         this.getProfileImage();
       });
@@ -61,31 +57,9 @@ class FriendProfile extends Component {
           }
         })
         .then((responseJson) => {
-          console.log(responseJson);
           this.setState({
             isLoading: false,
             profileData: responseJson
-          })
-        })
-        .catch((error) => {
-          console.log(error);
-        })
-      }
-
-      getFriendsList = async () => {
-        const token = await AsyncStorage.getItem('@session_token');
-        return fetch("http://localhost:3333/api/1.0.0/user/" + this.state.id + "/friends", {
-          method: 'get',
-          headers: {
-            "X-Authorization" : token
-          }
-        })
-        .then((response) => response.json())
-        .then((responseJson) => {
-          console.log("Friends",responseJson);
-          this.setState({
-            isLoading: false,
-            firendsFriendList: responseJson
           })
         })
         .catch((error) => {
@@ -162,7 +136,6 @@ class FriendProfile extends Component {
           }
         })
         .then((responseJson) => {
-          console.log("Posts",responseJson);
           this.setState({
             isLoading: false,
             userPosts: responseJson
@@ -210,7 +183,40 @@ class FriendProfile extends Component {
           .catch((error) =>{
             console.log(error)
           })
-        }
+      }
+
+      disLikePost = async (postID) => {
+        const token = await AsyncStorage.getItem('@session_token');
+        return fetch("http://localhost:3333/api/1.0.0/user/" + this.state.id + "/post/" + postID + "/like", {
+            method: 'DELETE',
+            headers: {
+              "X-Authorization" : token
+            }
+          })
+          .then((response) => {
+              if(response.status === 200){
+              }else if(response.status === 401){
+                showMessage({
+                  message: "You are not authorized, please login",
+                  type: 'warning',
+                })
+                this.props.navigation.navigate('Login');
+              }else if(response.status === 403){
+                showMessage({
+                  message: "You have not liked this post",
+                  type: 'warning',
+                })
+              }else{
+                showMessage({
+                  message: "Oops! Something went wrong!",
+                  type: 'warning',
+                  })
+              }
+          })
+          .catch((error) =>{
+            console.log(error)
+          })
+      }
         
       render(){
         if(this.state.isLoading){
@@ -239,7 +245,7 @@ class FriendProfile extends Component {
                       <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend Wall Post",this.state.id)}>
                           <Text style={styles.loginText}>Post on Wall</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friends",this.state.id)}>
+                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend's Friends",{friendUserID: this.state.id, friendName: this.state.profileData.first_name})}>
                           <Ionicons name='people' size={20} color='white'/>
                       </TouchableOpacity>
                     </View>
@@ -266,7 +272,7 @@ class FriendProfile extends Component {
                       <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend Wall Post",this.state.id)}>
                           <Text style={styles.loginText}>Post on Wall</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friends",this.state.id)}>
+                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend's Friends",{friendUserID: this.state.id, friendName: this.state.profileData.first_name})}>
                           <Ionicons name='people' size={20} color='white'/>
                       </TouchableOpacity>
                     </View>
@@ -283,6 +289,11 @@ class FriendProfile extends Component {
                                     <TouchableHighlight underlayColor={'transparent'} style={{marginLeft: 10}} onPress={() => this.likePost(item.post_id)}>
                                         <View>
                                             <Feather name="thumbs-up" size={15} color="#0096c7"/>
+                                        </View>
+                                    </TouchableHighlight>
+                                    <TouchableHighlight underlayColor={'transparent'} style={{marginLeft: 10}} onPress={() => this.disLikePost(item.post_id)}>
+                                        <View>
+                                            <Feather name="thumbs-down" size={15} color="#0096c7"/>
                                         </View>
                                     </TouchableHighlight>
                                     <View style={{flex: 1, alignItems: 'flex-end'}}>

@@ -57,7 +57,6 @@ class FriendSearch extends Component {
       }
   })
     .then((responseJson) => {
-      console.log(responseJson);
       this.setState({
         isLoading: false,
         nameList: responseJson

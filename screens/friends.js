@@ -10,7 +10,8 @@ class Friends extends Component {
     this.state = {
       isLoading: true,
       listData: [],
-      friendUserID: this.props.route.params
+      friendUserID: this.props.route.params,
+      friendName: this.props.route.params
     };
   }
 
@@ -27,7 +28,7 @@ class Friends extends Component {
   getData = async () => {
       if(this.state.friendUserID != null){
         const token = await AsyncStorage.getItem('@session_token');
-        return fetch("http://localhost:3333/api/1.0.0/user/" + this.state.friendUserID + "/friends", {
+        return fetch("http://localhost:3333/api/1.0.0/user/" + this.state.friendUserID.friendUserID + "/friends", {
         method: 'get',
         headers: {
           "X-Authorization" : token
@@ -58,7 +59,7 @@ class Friends extends Component {
         }
       })
       .then((responseJson) => {
-        console.log("Friends",responseJson);
+        console.log(this.state.friendName)
         this.setState({
           isLoading: false,
           listData: responseJson
@@ -101,7 +102,6 @@ class Friends extends Component {
         }
       })
       .then((responseJson) => {
-        console.log("Friends",responseJson);
         this.setState({
           isLoading: false,
           listData: responseJson
@@ -129,7 +129,7 @@ class Friends extends Component {
           <View style={{flex: 1}}>
             <ScrollView style={{flex: 1}}>
               <View>
-                <Text style={styles.titleText}>Friends</Text>
+                <Text style={styles.titleText}>{this.state.friendUserID.friendName}'s Friends</Text>
                 <View style={{paddingLeft: 10, paddingRight: 10}}>
                   <FlatList
                     data={this.state.listData}
@@ -150,7 +150,7 @@ class Friends extends Component {
           return(
             <View style={{flex: 1}}>
               <View style={{flex: 1}}>
-                  <Text style={styles.titleText}>Friends</Text>
+                  <Text style={styles.titleText}>My Friends</Text>
               </View>
               <View style={{flex: 2}}>
                 <Text style={styles.noFriendText}>You have no friends added</Text>
