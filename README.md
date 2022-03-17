@@ -13,6 +13,12 @@ After clonning the project and navigating to the root directory of the project, 
   npm install
 ```
 
+After that run the following command to install the react native flash message library (The app will fail to run if this library is not installed)
+
+```
+  npm i react-native-flash-message
+```
+
 After that run following command in order to start the app, you can run the app on either a browser or a simulator, please follow the instruction on the terminal depending on what you choose.
 
 ```
