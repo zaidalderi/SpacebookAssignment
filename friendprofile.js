@@ -15,10 +15,7 @@ class FriendProfile extends Component {
             isLoading: true,
             id: this.props.route.params,
             profileData: [],
-            myfriendsList: [],
-            friendsFriendList: [],
             userPosts: [],
-            loggedInUserFriends: [],
             photo: null
         };
     }
@@ -26,7 +23,6 @@ class FriendProfile extends Component {
     componentDidMount() {
       this.unsubscribe = this.props.navigation.addListener('focus', () => {
         this.getPosts();
-        this.getFriendsList();
         this.getData();
         this.getProfileImage();
       });
@@ -61,31 +57,9 @@ class FriendProfile extends Component {
           }
         })
         .then((responseJson) => {
-          console.log(responseJson);
           this.setState({
             isLoading: false,
             profileData: responseJson
-          })
-        })
-        .catch((error) => {
-          console.log(error);
-        })
-      }
-
-      getFriendsList = async () => {
-        const token = await AsyncStorage.getItem('@session_token');
-        return fetch("http://localhost:3333/api/1.0.0/user/" + this.state.id + "/friends", {
-          method: 'get',
-          headers: {
-            "X-Authorization" : token
-          }
-        })
-        .then((response) => response.json())
-        .then((responseJson) => {
-          console.log("Friends",responseJson);
-          this.setState({
-            isLoading: false,
-            firendsFriendList: responseJson
           })
         })
         .catch((error) => {
@@ -162,7 +136,6 @@ class FriendProfile extends Component {
           }
         })
         .then((responseJson) => {
-          console.log("Posts",responseJson);
           this.setState({
             isLoading: false,
             userPosts: responseJson
@@ -255,7 +228,7 @@ class FriendProfile extends Component {
               />
             </View>
           );
-        }else if(this.state.userPosts.length == 0){
+        }else if(this.state.userPosts.length === 0){
           return(
             <View style={styles.container}>
                 <Image
@@ -272,7 +245,7 @@ class FriendProfile extends Component {
                       <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend Wall Post",this.state.id)}>
                           <Text style={styles.loginText}>Post on Wall</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friends",{friendUserID: this.state.id, friendName: this.state.profileData.first_name})}>
+                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend's Friends",{friendUserID: this.state.id, friendName: this.state.profileData.first_name})}>
                           <Ionicons name='people' size={20} color='white'/>
                       </TouchableOpacity>
                     </View>
@@ -299,7 +272,7 @@ class FriendProfile extends Component {
                       <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend Wall Post",this.state.id)}>
                           <Text style={styles.loginText}>Post on Wall</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friends",{friendUserID: this.state.id, friendName: this.state.profileData.first_name})}>
+                      <TouchableOpacity style={styles.loginBtn} onPress={() => this.props.navigation.navigate("Friend's Friends",{friendUserID: this.state.id, friendName: this.state.profileData.first_name})}>
                           <Ionicons name='people' size={20} color='white'/>
                       </TouchableOpacity>
                     </View>
